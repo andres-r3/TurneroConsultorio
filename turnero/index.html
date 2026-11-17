@@ -1,0 +1,2756 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- evita zoom/scroll raro en móvil -->
+  <title>Turnero Público</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* ===== Tema (claro/oscuro) y base ===== */
+    :root {
+      --bg: #f8fafc;
+      --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      --panel: rgba(255, 255, 255, 0.85);
+      --panel-solid: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-light: rgba(59, 130, 246, 0.08);
+      --accent-2: #10b981;
+      --accent-2-light: rgba(16, 185, 129, 0.1);
+      --danger: #ef4444;
+      --border: rgba(226, 232, 240, 0.8);
+      --row: #ffffff;
+      --row-hover: #f1f5f9;
+      --row-selected: #e2e8f0;
+      --thead: #f8fafc;
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1;
+      --shadow: rgba(15, 23, 42, 0.06);
+      --ring: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      --glass-border: rgba(255, 255, 255, 0.6);
+    }
+
+    html {
+      color-scheme: light dark;
+    }
+
+    [data-theme="dark"] {
+      --bg: #090d16;
+      --bg-gradient: linear-gradient(135deg, #090d16 0%, #020617 100%);
+      --panel: rgba(17, 24, 39, 0.75);
+      --panel-solid: #111827;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --accent: #60a5fa;
+      --accent-hover: #3b82f6;
+      --accent-light: rgba(96, 165, 250, 0.15);
+      --accent-2: #34d399;
+      --accent-2-light: rgba(52, 211, 153, 0.15);
+      --danger: #f87171;
+      --border: rgba(55, 65, 81, 0.6);
+      --row: #1f2937;
+      --row-hover: #374151;
+      --row-selected: #4b5563;
+      --thead: #1f2937;
+      --input-bg: #111827;
+      --input-border: #374151;
+      --shadow: rgba(0, 0, 0, 0.25);
+      --ring: 0 0 0 3px rgba(96, 165, 250, 0.3);
+      --glass-border: rgba(255, 255, 255, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.5;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-attachment: fixed;
+    }
+
+    #build {
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      font: 11px ui-monospace, Menlo, monospace;
+      opacity: .5;
+      z-index: 100;
+      background: var(--panel-solid);
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    #build:hover {
+      opacity: 1;
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    /* ===== Header (sticky y moderno) ===== */
+    header.toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--glass-border);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    }
+
+    body.header-hidden header.toolbar {
+      transform: translateY(-100%);
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    body.header-hidden.header-expanded header.toolbar {
+      transform: translateY(0);
+      margin-top: 0 !important;
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @media (max-width: 600px) {
+      body.header-hidden header.toolbar {
+        margin-top: -110px;
+        /* Altura aproximada de barra móvil de dos filas */
+      }
+    }
+
+    @media (min-width: 601px) {
+      body.header-hidden header.toolbar {
+        margin-top: -64px;
+        /* Altura de barra en escritorio */
+      }
+    }
+
+    /* Tab para desplegar la barra de herramientas cuando está oculta */
+    .header-tab {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      background: var(--panel);
+      border: 1px solid var(--glass-border);
+      border-top: none;
+      padding: 6px 16px;
+      border-radius: 0 0 12px 12px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    .header-tab:hover {
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    body.header-hidden .header-tab {
+      display: flex;
+    }
+
+    header.toolbar .brand {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    header.toolbar h3 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--text) 0%, var(--muted) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header.toolbar .version-badge {
+      background: var(--accent-light);
+      color: var(--accent);
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 20px;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      margin-left: 8px;
+    }
+
+    header.toolbar .version-badge:hover {
+      background: var(--accent);
+      color: #ffffff;
+      transform: scale(1.05);
+    }
+
+    header .right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    @media (max-width: 600px) {
+      header.toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 12px 16px;
+      }
+
+      header.toolbar .brand {
+        justify-content: space-between;
+        width: 100%;
+      }
+
+      header.toolbar .right {
+        display: flex;
+        gap: 6px;
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      header.toolbar .right .btn {
+        flex: 1;
+        padding: 8px 4px;
+        font-size: 11.5px;
+        min-height: 40px;
+        text-align: center;
+        justify-content: center;
+      }
+    }
+
+    /* ===== Botones ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--input-border);
+      background: var(--panel-solid);
+      color: var(--text);
+      padding: 10px 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 2px 4px var(--shadow);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      white-space: nowrap;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      background: var(--row-hover);
+      border-color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    .btn.primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      box-shadow: 0 4px 14px var(--accent-light);
+    }
+
+    .btn.small {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+
+    /* ===== Layout ===== */
+    .wrap {
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 16px;
+      flex: 1;
+    }
+
+    .card {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      box-shadow: 0 10px 30px -5px var(--shadow), 0 4px 6px -2px var(--shadow);
+      padding: 28px;
+      margin-bottom: 24px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .col {
+      flex: 1 1 220px;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 20px 0;
+    }
+
+    /* ===== Inputs ===== */
+    input[type="text"],
+    input[type="tel"],
+    input[type="search"],
+    select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--input-border);
+      border-radius: 12px;
+      background: var(--input-bg);
+      color: var(--text);
+      outline: none;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    input:hover,
+    select:hover {
+      border-color: var(--accent);
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: var(--ring);
+    }
+
+    /* ===== Tipografía utilitaria ===== */
+    h3 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13.5px;
+    }
+
+    .status {
+      font-size: 14.5px;
+      color: var(--muted);
+      margin: 8px 0;
+    }
+
+    .section-title {
+      font-size: 15px;
+      margin: 12px 0 6px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ===== Formularios en Rejilla ===== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 16px 0;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-field label {
+      font-weight: 700;
+      color: var(--text);
+      font-size: 13.5px;
+    }
+
+    body.mobile-large .form-field label {
+      font-size: 15px;
+    }
+
+    .form-field.full-width {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 520px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .form-field.full-width {
+        grid-column: span 1;
+      }
+    }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      background: var(--panel-solid);
+      border-left: 4px solid var(--accent);
+      color: var(--text);
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px var(--shadow);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(20px) scale(0.95);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .toast.hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 560px) {
+      .toast {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        width: auto;
+        text-align: center;
+        justify-content: center;
+      }
+    }
+
+    /* ===== Avisos ===== */
+    .notices {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .notice {
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--accent-light);
+      color: var(--text);
+      font-size: 13.5px;
+      border-left: 4px solid var(--accent);
+      line-height: 1.4;
+    }
+
+    /* ===== Dashboard / Screen Menu styles ===== */
+    .welcome-bar {
+      margin-bottom: 24px;
+    }
+
+    .welcome-bar h3 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .welcome-bar p {
+      margin-top: 4px;
+    }
+
+    .clinic-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .info-card {
+      background: var(--panel-solid);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 10px var(--shadow);
+    }
+
+    .info-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 16px var(--shadow);
+    }
+
+    .info-icon {
+      font-size: 24px;
+      background: var(--accent-light);
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .info-content h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .info-content p {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-top: 2px;
+      line-height: 1.25;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .action-btn {
+      background: var(--panel-solid);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .action-btn:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px -10px var(--shadow);
+      background: var(--row-hover);
+    }
+
+    .action-icon {
+      font-size: 22px;
+      background: var(--accent-light);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-title {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
+    }
+
+    .action-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    /* ===== Grid / slots ===== */
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    @media (min-width:740px) {
+      .grid2 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .slot-card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--panel-solid);
+      box-shadow: 0 4px 15px var(--shadow);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slot-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--thead);
+    }
+
+    .slot-head strong {
+      font-weight: 700;
+      font-size: 14.5px;
+      color: var(--text);
+    }
+
+    .slot-body {
+      max-height: 50vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hour-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text);
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .hour-btn:hover {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateX(2px);
+    }
+
+    .badge-payment {
+      background: var(--accent-2-light);
+      color: var(--accent-2);
+      font-size: 10.5px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* ===== Lista simple ===== */
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .item {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 18px;
+      background: var(--panel-solid);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px var(--shadow);
+    }
+
+    .item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px var(--shadow);
+      border-color: var(--accent);
+    }
+
+    /* ===== Modal genérico ===== */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      z-index: 40;
+      transition: all 0.2s ease;
+    }
+
+    .modal.hidden {
+      display: none !important;
+    }
+
+    .modal-card {
+      width: min(520px, 96vw);
+      background: var(--panel-solid);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+      padding: 24px;
+      animation: modalScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalScaleUp {
+      from {
+        transform: scale(0.9) translateY(10px);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    /* ===== Modal Changelog ===== */
+    .changelog-card {
+      max-width: 600px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h3 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--muted);
+      transition: color 0.2s ease;
+      line-height: 1;
+    }
+
+    .close-btn:hover {
+      color: var(--text);
+    }
+
+    .changelog-body {
+      padding: 20px 24px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .changelog-section h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .changelog-section ul {
+      list-style-type: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .changelog-section li {
+      font-size: 13.5px;
+      line-height: 1.5;
+      position: relative;
+      padding-left: 18px;
+    }
+
+    .changelog-section li::before {
+      content: "•";
+      color: var(--accent);
+      font-weight: bold;
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    /* ===== Barra de progreso ===== */
+    .progress {
+      position: sticky;
+      top: 50px;
+      z-index: 25;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: var(--panel-solid);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .progress.hidden {
+      display: none !important;
+    }
+
+    .bar {
+      position: relative;
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      overflow: hidden;
+      border-radius: 999px;
+    }
+
+    .bar::after {
+      content: "";
+      position: absolute;
+      left: -40%;
+      top: 0;
+      height: 100%;
+      width: 40%;
+      background: var(--accent);
+      animation: load 1.1s linear infinite;
+      border-radius: 999px;
+    }
+
+    @keyframes load {
+      0% {
+        left: -40%;
+      }
+
+      100% {
+        left: 100%;
+      }
+    }
+
+    .progress span {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    /* ===== Registro Modal ===== */
+    #regModal .modal-card {
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    #regModal .row {
+      flex-direction: row;
+      gap: 12px;
+      margin: 10px 0;
+    }
+
+    @media (max-width: 520px) {
+      #regModal .row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+
+    /* ===== Modo Accesibilidad (Grande) ===== */
+    body.mobile-large {
+      font-size: 18px;
+    }
+
+    @media (max-width: 480px) {
+      body.mobile-large {
+        font-size: 19px;
+      }
+    }
+
+    body.mobile-large h3 {
+      font-size: 22px;
+    }
+
+    body.mobile-large .welcome-bar h3 {
+      font-size: 25px;
+    }
+
+    body.mobile-large .btn {
+      padding: 12px 20px;
+      font-size: 15.5px;
+      border-radius: 14px;
+      min-height: 52px;
+    }
+
+    body.mobile-large .btn.small {
+      padding: 8px 14px;
+      font-size: 13.5px;
+      border-radius: 10px;
+    }
+
+    body.mobile-large input[type="text"],
+    body.mobile-large input[type="tel"],
+    body.mobile-large input[type="search"],
+    body.mobile-large select {
+      padding: 12px 18px;
+      font-size: 15.5px;
+      border-radius: 14px;
+      min-height: 50px;
+    }
+
+    body.mobile-large .section-title {
+      font-size: 16.5px;
+      margin: 14px 0 8px;
+    }
+
+    body.mobile-large .muted {
+      font-size: 14.5px;
+    }
+
+    body.mobile-large .status {
+      font-size: 15.5px;
+    }
+
+    body.mobile-large .notice {
+      font-size: 14.5px;
+      padding: 14px 18px;
+      border-radius: 14px;
+    }
+
+    /* Info cards in dashboard */
+    body.mobile-large .info-card {
+      padding: 18px;
+      border-radius: 16px;
+      gap: 16px;
+    }
+
+    body.mobile-large .info-icon {
+      font-size: 28px;
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+    }
+
+    body.mobile-large .info-content h4 {
+      font-size: 12.5px;
+    }
+
+    body.mobile-large .info-content p {
+      font-size: 16px;
+    }
+
+    /* Action buttons in dashboard */
+    body.mobile-large .action-btn {
+      padding: 20px 18px;
+      border-radius: 18px;
+      gap: 8px;
+      width: 100%;
+    }
+
+    body.mobile-large .action-icon {
+      font-size: 26px;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+    }
+
+    body.mobile-large .action-title {
+      font-size: 16.5px;
+    }
+
+    body.mobile-large .action-desc {
+      font-size: 13px;
+    }
+
+    /* Slots and booking buttons */
+    body.mobile-large .slot-card {
+      border-radius: 16px;
+    }
+
+    body.mobile-large .slot-head {
+      padding: 14px 18px;
+    }
+
+    body.mobile-large .slot-head strong {
+      font-size: 16px;
+    }
+
+    body.mobile-large .slot-body {
+      padding: 14px;
+      gap: 10px;
+    }
+
+    body.mobile-large .hour-btn {
+      padding: 14px 16px;
+      font-size: 15px;
+      border-radius: 12px;
+      min-height: 48px;
+    }
+
+    body.mobile-large .badge-payment {
+      font-size: 11.5px;
+      padding: 3px 6px;
+      border-radius: 6px;
+    }
+
+    /* Lists and items */
+    body.mobile-large .item {
+      padding: 16px 20px;
+      border-radius: 14px;
+      font-size: 15.5px;
+    }
+
+    /* Modal sizes */
+    body.mobile-large .modal-card {
+      padding: 24px;
+      border-radius: 20px;
+    }
+
+    body.mobile-large .modal-card h3 {
+      font-size: 20px;
+      margin-bottom: 14px;
+    }
+
+    body.mobile-large .modal-actions {
+      margin-top: 20px;
+      gap: 10px;
+    }
+
+    /* Changelog modal */
+    body.mobile-large .changelog-card h3 {
+      font-size: 20px;
+    }
+
+    body.mobile-large .changelog-section h4 {
+      font-size: 15.5px;
+    }
+
+    body.mobile-large .changelog-section li {
+      font-size: 14.5px;
+    }
+
+    /* Refinamientos específicos de layout para el modo de accesibilidad */
+    body.mobile-large header.toolbar .version-badge {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 12px;
+      margin-left: 6px;
+    }
+
+    body.mobile-large header.toolbar .btn {
+      padding: 8px 12px;
+      font-size: 13.5px;
+      min-height: 40px;
+      border-radius: 10px;
+    }
+
+    body.mobile-large .modal-card .btn {
+      padding: 10px 16px;
+      font-size: 15.5px;
+      min-height: 48px;
+      border-radius: 12px;
+    }
+
+    body.mobile-large select.btn {
+      min-height: 52px;
+    }
+
+    body.mobile-large #build {
+      font-size: 12px;
+      padding: 3px 6px;
+      border-radius: 6px;
+      left: 12px;
+      bottom: 12px;
+    }
+
+    @keyframes bounceIn {
+      from {
+        transform: scale(0.3);
+        opacity: 0;
+      }
+
+      50% {
+        transform: scale(1.05);
+      }
+
+      70% {
+        transform: scale(0.9);
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body data-theme="dark">
+  <div id="build">TP v2.4.7</div>
+  <header class="toolbar">
+    <div class="brand">
+      <h3>SistemaWeb</h3>
+      <span class="version-badge" id="versionBtn" style="cursor:pointer">v2.4.7</span>
+    </div>
+    <div class="right">
+      <button class="btn" id="toggleTheme">🌑 Oscuro</button>
+      <button class="btn" id="toggleSize">📱 Tamaño normal</button>
+      <button class="btn" id="logout" style="display:none">🚪 Salir</button>
+    </div>
+  </header>
+
+  <!-- Tab para desplegar cabecera oculta -->
+  <div class="header-tab" id="headerTab" onclick="toggleHeaderForce()">
+    <span id="headerTabIcon">▼ Mostrar Ajustes</span>
+  </div>
+
+  <!-- Barra de progreso -->
+  <div id="progress" class="progress hidden">
+    <div class="bar"></div>
+    <span id="progressText">Procesando…</span>
+  </div>
+
+  <div class="wrap">
+    <!-- LOGIN -->
+    <div id="screenLogin">
+      <!-- Cartel de Aviso: Cambio de Celular (Tarjeta Independiente arriba) -->
+      <div id="loginCellNotice" class="card" style="border-left: 4px solid var(--accent); position: relative; margin-bottom: 24px;">
+        <!-- Botón cerrar (oculta el cartel temporalmente) -->
+        <button id="closeLoginCellNotice" onclick="document.getElementById('loginCellNotice').style.display='none';" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; color: var(--muted); cursor: pointer; line-height: 1; z-index: 10;">&times;</button>
+        <h3 style="margin-bottom:12px; display: flex; align-items: center; gap: 8px;">📢 Aviso Importante</h3>
+        <p class="muted" style="font-size: 14px; line-height: 1.6; margin-bottom: 20px; padding-right: 20px;">
+          Hemos cambiado nuestro número de celular. Hacé clic abajo para escribirnos a nuestro nuevo WhatsApp.
+        </p>
+        <a href="https://wa.me/5493571592323" target="_blank" class="btn" style="background: #25d366 !important; border-color: #25d366 !important; color: #ffffff !important; display: inline-flex; align-items: center; gap: 8px; width: 100%; justify-content: center; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2); transition: all 0.2s ease;">
+          <svg style="width: 20px; height: 20px; fill: currentColor;" viewBox="0 0 24 24">
+            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.728-1.463L0 24zm6.59-4.846c1.6.95 3.197 1.45 4.817 1.451 5.396 0 9.786-4.386 9.79-9.782.002-2.612-1.01-5.067-2.855-6.912-1.844-1.844-4.293-2.86-6.905-2.861-5.399 0-9.787 4.387-9.792 9.783-.001 1.74.455 3.435 1.32 4.933l-.995 3.633 3.72-1.026zm10.741-6.702c-.3-.15-1.774-.875-2.046-.975-.27-.1-.47-.15-.67.15-.2.3-.77.975-.94 1.175-.17.2-.35.225-.65.075-.3-.15-1.264-.467-2.408-1.487-.888-.792-1.49-1.77-1.664-2.07-.17-.3-.018-.462.13-.61.135-.133.3-.35.45-.525.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.67-1.625-.92-2.225-.24-.58-.49-.5-.67-.513-.17-.008-.37-.01-.57-.01-.2 0-.52.075-.79.37-.27.3-1.03 1.01-1.03 2.46s1.05 2.85 1.2 3.05c.15.2 2.07 3.16 5.01 4.43.7.3 1.25.48 1.68.62.7.22 1.34.19 1.84.115.56-.083 1.774-.725 2.025-1.425.25-.7.25-1.3 0-1.425-.07-.125-.27-.2-.57-.35z"/>
+          </svg>
+          Contactar por WhatsApp
+        </a>
+      </div>
+
+      <section class="card">
+        <h3 style="margin-bottom:16px;">Ingresar</h3>
+        <div class="row">
+          <div class="col"><input id="dni" type="text" inputmode="numeric" placeholder="DNI (solo números)"></div>
+          <div><button id="btnLogin" class="btn primary">Ingresar</button></div>
+        </div>
+        <p class="muted" id="loginMsg" style="margin-top:8px;"></p>
+
+        <hr>
+
+        <!-- Botón que abre el modal de registro -->
+        <div class="row" style="justify-content:space-between">
+          <h3>¿No tenés usuario?</h3>
+          <button class="btn" id="btnOpenReg">Crear usuario nuevo</button>
+        </div>
+        <p class="muted" style="margin-top:8px;">Tu solicitud será procesada para habilitar tu acceso.</p>
+      </section>
+    </div>
+
+    <!-- MENÚ / DASHBOARD -->
+    <div id="screenMenu" style="display:none;">
+      <!-- Cartel de Aviso: Cambio de Celular (Tarjeta Independiente arriba) -->
+      <div id="menuCellNotice" class="card" style="border-left: 4px solid var(--accent); position: relative; margin-bottom: 24px;">
+        <!-- Botón cerrar (oculta el cartel temporalmente) -->
+        <button id="closeMenuCellNotice" onclick="document.getElementById('menuCellNotice').style.display='none';" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; color: var(--muted); cursor: pointer; line-height: 1; z-index: 10;">&times;</button>
+        <h3 style="margin-bottom:12px; display: flex; align-items: center; gap: 8px;">📢 Aviso Importante</h3>
+        <p class="muted" style="font-size: 14px; line-height: 1.6; margin-bottom: 20px; padding-right: 20px;">
+          Hemos cambiado nuestro número de celular. Hacé clic abajo para escribirnos a nuestro nuevo WhatsApp.
+        </p>
+        <a href="https://wa.me/5493571592323" target="_blank" class="btn" style="background: #25d366 !important; border-color: #25d366 !important; color: #ffffff !important; display: inline-flex; align-items: center; gap: 8px; width: 100%; justify-content: center; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2); transition: all 0.2s ease;">
+          <svg style="width: 20px; height: 20px; fill: currentColor;" viewBox="0 0 24 24">
+            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.728-1.463L0 24zm6.59-4.846c1.6.95 3.197 1.45 4.817 1.451 5.396 0 9.786-4.386 9.79-9.782.002-2.612-1.01-5.067-2.855-6.912-1.844-1.844-4.293-2.86-6.905-2.861-5.399 0-9.787 4.387-9.792 9.783-.001 1.74.455 3.435 1.32 4.933l-.995 3.633 3.72-1.026zm10.741-6.702c-.3-.15-1.774-.875-2.046-.975-.27-.1-.47-.15-.67.15-.2.3-.77.975-.94 1.175-.17.2-.35.225-.65.075-.3-.15-1.264-.467-2.408-1.487-.888-.792-1.49-1.77-1.664-2.07-.17-.3-.018-.462.13-.61.135-.133.3-.35.45-.525.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.67-1.625-.92-2.225-.24-.58-.49-.5-.67-.513-.17-.008-.37-.01-.57-.01-.2 0-.52.075-.79.37-.27.3-1.03 1.01-1.03 2.46s1.05 2.85 1.2 3.05c.15.2 2.07 3.16 5.01 4.43.7.3 1.25.48 1.68.62.7.22 1.34.19 1.84.115.56-.083 1.774-.725 2.025-1.425.25-.7.25-1.3 0-1.425-.07-.125-.27-.2-.57-.35z"/>
+          </svg>
+          Contactar por WhatsApp
+        </a>
+      </div>
+
+      <section class="card">
+        <div class="welcome-bar">
+          <h3>Hola, <span id="userName">—</span></h3>
+          <p class="muted">Bienvenido a tu portal de autogestión médica.</p>
+        </div>
+
+        <!-- Grid de Información del Consultorio -->
+        <div class="clinic-info-grid">
+          <div class="info-card">
+            <div class="info-icon">📅</div>
+            <div class="info-content">
+              <h4>Próxima Atención</h4>
+              <p id="infoProximaAtencion">—</p>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="info-icon">🎟️</div>
+            <div class="info-content">
+              <h4>Entrega de Turnos</h4>
+              <p id="infoEntregaTurnos">—</p>
+            </div>
+          </div>
+          <div class="info-card" id="cardEntregaMed" onclick="openMedDetailModal()" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" title="Toca para ver información completa">
+            <div class="info-icon">📋</div>
+            <div class="info-content">
+              <h4>Información sobre medicación</h4>
+              <p id="infoEntregaMed">—</p>
+            </div>
+          </div>
+          <!-- Cuarta tarjeta de WhatsApp en la cuadrícula de información -->
+          <a href="https://wa.me/5493571592323" target="_blank" class="info-card" style="text-decoration: none; border-color: rgba(37, 211, 102, 0.3); transition: all 0.2s ease;">
+            <div class="info-icon" style="background: rgba(37, 211, 102, 0.1); color: #25d366;">
+              <svg style="width: 24px; height: 24px; fill: currentColor;" viewBox="0 0 24 24">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.728-1.463L0 24zm6.59-4.846c1.6.95 3.197 1.45 4.817 1.451 5.396 0 9.786-4.386 9.79-9.782.002-2.612-1.01-5.067-2.855-6.912-1.844-1.844-4.293-2.86-6.905-2.861-5.399 0-9.787 4.387-9.792 9.783-.001 1.74.455 3.435 1.32 4.933l-.995 3.633 3.72-1.026zm10.741-6.702c-.3-.15-1.774-.875-2.046-.975-.27-.1-.47-.15-.67.15-.2.3-.77.975-.94 1.175-.17.2-.35.225-.65.075-.3-.15-1.264-.467-2.408-1.487-.888-.792-1.49-1.77-1.664-2.07-.17-.3-.018-.462.13-.61.135-.133.3-.35.45-.525.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.67-1.625-.92-2.225-.24-.58-.49-.5-.67-.513-.17-.008-.37-.01-.57-.01-.2 0-.52.075-.79.37-.27.3-1.03 1.01-1.03 2.46s1.05 2.85 1.2 3.05c.15.2 2.07 3.16 5.01 4.43.7.3 1.25.48 1.68.62.7.22 1.34.19 1.84.115.56-.083 1.774-.725 2.025-1.425.25-.7.25-1.3 0-1.425-.07-.125-.27-.2-.57-.35z"/>
+              </svg>
+            </div>
+            <div class="info-content">
+              <h4>WhatsApp Consultorio</h4>
+              <p style="color: #25d366; font-weight: 800;">3571-592323</p>
+            </div>
+          </a>
+        </div>
+
+        <div class="section-title">¿Qué deseas hacer hoy?</div>
+        <div class="action-grid">
+          <button class="action-btn" id="goSacar">
+            <div class="action-icon">🗓️</div>
+            <div class="action-title">Sacar Turno</div>
+            <div class="action-desc">Reservá una cita médica disponible</div>
+          </button>
+          <button class="action-btn" id="goReservas">
+            <div class="action-icon">📂</div>
+            <div class="action-title">Mis Reservas</div>
+            <div class="action-desc">Consultá y gestioná tus turnos futuros</div>
+          </button>
+          <button class="action-btn" id="goMed">
+            <div class="action-icon">📋</div>
+            <div class="action-title">Medicación</div>
+            <div class="action-desc">Pedí recetas y consultá el precio total</div>
+          </button>
+          <button class="action-btn" id="goDatos">
+            <div class="action-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"
+                style="fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" style="stroke: var(--accent-2);" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" style="stroke: var(--accent-2);" />
+              </svg>
+            </div>
+            <div class="action-title">Mis Datos</div>
+            <div class="action-desc">Actualizá tu información de contacto</div>
+          </button>
+        </div>
+
+        <div class="notices" id="notices"></div>
+      </section>
+    </div>
+
+    <!-- SACAR TURNO -->
+    <section id="screenSacar" class="card" style="display:none">
+      <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+        <h3>Sacar turno</h3>
+        <button class="btn" id="back1">⬅️ Volver</button>
+      </div>
+      <p class="status" id="publicState">Cargando…</p>
+      <div class="grid2" id="slotsWrap"></div>
+    </section>
+
+    <!-- MIS RESERVAS -->
+    <section id="screenReservas" class="card" style="display:none">
+      <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+        <h3>Mis reservas</h3>
+        <button class="btn" id="back2">⬅️ Volver</button>
+      </div>
+      <div id="reservasNotice" class="notice" style="display:none"></div>
+      <div id="reservasList" class="list"></div>
+      <p class="muted" id="reservasMeta" style="margin-top:12px;"></p>
+    </section>
+
+    <!-- MEDICACIÓN -->
+    <section id="screenMed" class="card" style="display:none">
+      <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+        <h3>Medicación</h3>
+        <button class="btn" id="back3">⬅️ Volver</button>
+      </div>
+      <p style="margin: 12px 0;">Su medicación estará disponible el <strong id="medFecha">—</strong></p>
+      <div id="medGateNotice" class="notice" style="display:none"></div>
+      <div id="medResumen" class="notices"></div>
+      <button class="btn" id="btnPrecioTotal" style="margin-top:12px; width:100%; display:none; background: rgba(59, 130, 246, 0.08); border-color: var(--accent); color: var(--accent); font-weight: 600;">Solicitar precio</button>
+      <button class="btn primary" id="btnSolicitar" style="margin-top:12px; width:100%;">Solicitar</button>
+      <p class="muted" style="margin-top:8px;">Se registrará en “Repeticiones”.</p>
+    </section>
+
+    <!-- MIS DATOS -->
+    <section id="screenDatos" class="card" style="display:none">
+      <div class="row" style="justify-content:space-between; margin-bottom:12px;">
+        <h3>Mis datos</h3>
+        <button class="btn" id="back4">⬅️ Volver</button>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label>DNI</label>
+          <input id="d_dni" type="text" disabled>
+        </div>
+        <div class="form-field">
+          <label>Nombre</label>
+          <input id="d_nombre" type="text" disabled>
+        </div>
+        <div class="form-field">
+          <label>Teléfono</label>
+          <input id="d_tel" type="tel" placeholder="Teléfono">
+        </div>
+        <div class="form-field">
+          <label>Domicilio</label>
+          <input id="d_dom" type="text" placeholder="Domicilio">
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 16px;">
+        <button class="btn primary" id="btnGuardarDatos" style="width:100%;">Guardar</button>
+      </div>
+    </section>
+
+    <!-- USUARIO REGISTRADO PERO SIN ACCESO DIRECTO -->
+    <section id="screenNoPermitido" class="card" style="display:none; text-align: center; padding: 32px 20px;">
+      <!-- SVG Icono Personas Premium -->
+      <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="56" height="56"
+          style="fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" style="stroke: var(--accent-2);" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" style="stroke: var(--accent-2);" />
+        </svg>
+      </div>
+
+      <h3 style="font-size: 22px; margin-bottom: 8px; font-weight: 800;">Usuario Registrado</h3>
+      <p class="muted" style="line-height: 1.6; margin-bottom: 20px; font-size: 14.5px; text-align: left;">
+        Te encontrás registrado en el sistema. Sin embargo, por políticas del consultorio, el acceso a las funciones
+        completas de reserva de turnos en línea se habilitará automáticamente <strong>después de tu primera consulta
+          presencial</strong>.
+      </p>
+
+      <!-- Fechas Informativas del Consultorio -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap;">
+        <div
+          style="flex: 1; min-width: 130px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 10px; text-align: center;">
+          <span
+            style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 700; display: block; margin-bottom: 4px;">📅
+            Próxima Atención</span>
+          <strong id="noPermitidoAtencion"
+            style="font-size: 13px; color: var(--text); font-weight: 700;">Cargando…</strong>
+        </div>
+        <div
+          style="flex: 1; min-width: 130px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 10px; text-align: center;">
+          <span
+            style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 700; display: block; margin-bottom: 4px;">🎟️
+            Entrega de Turnos</span>
+          <strong id="noPermitidoTurnos"
+            style="font-size: 13px; color: var(--text); font-weight: 700;">Cargando…</strong>
+        </div>
+      </div>
+
+      <!-- Box Informativo de Cupos -->
+      <div
+        style="background: var(--bg); border: 1px solid var(--border); border-radius: 16px; padding: 16px; text-align: left; margin-bottom: 20px; font-size: 13px; line-height: 1.5; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+        <strong style="color: var(--accent); display: block; margin-bottom: 6px; font-size: 14px; font-weight: 700;">🔔
+          Cupos Limitados de Atención</strong>
+        Para garantizar la calidad y el seguimiento de cada tratamiento, los cupos para nuevas atenciones y reingresos
+        son limitados y se asignan estrictamente por orden de la lista de espera.
+        <ul
+          style="margin: 8px 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 6px; color: var(--muted); list-style-type: disc;">
+          <li><strong>Registro:</strong> Al unirte a la lista de espera, guardamos tu lugar en la fila.</li>
+          <li><strong>Contacto:</strong> Antes de la próxima entrega de turnos, nos comunicaremos con vos por WhatsApp
+            para ofrecerte tu cupo de atención.</li>
+          <li><strong>Selección:</strong> En ese momento, podrás ingresar al turnero y elegir el día y horario que te
+            quede más cómodo.</li>
+        </ul>
+      </div>
+
+      <!-- Box de Lista de Espera -->
+      <div
+        style="background: var(--panel-solid); border: 1px dashed var(--border); border-radius: 16px; padding: 18px; text-align: center; margin-bottom: 20px;">
+        <h4 style="font-size: 15px; margin-bottom: 8px; font-weight: 700;">Estado de Lista de Espera</h4>
+        <div id="waitingListStatus"
+          style="font-weight: 600; font-size: 13px; min-height: 44px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+          <span>Cargando estado…</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="btnLogoutNoPermitido" class="btn" style="width: 100%;">🚪 Salir</button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Modal de confirmaciones (ya existente) -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3 id="modalTitle">Confirmar</h3>
+      <p id="modalText" class="muted" style="margin: 12px 0;"></p>
+      <div class="modal-actions">
+        <button id="modalCancel" class="btn">Cancelar</button>
+        <button id="modalOk" class="btn primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Changelog (Novedades de la versión) -->
+  <div id="changelogModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card changelog-card">
+      <div class="modal-header">
+        <h3>Novedades de la Versión 2.4.7</h3>
+        <button class="close-btn" id="changelogCloseBtn">&times;</button>
+      </div>
+      <div class="changelog-body">
+        <div class="changelog-section">
+          <h4>🚀 Nuevas Funcionalidades (v2.4.7)</h4>
+          <ul>
+            <li><strong>Optimizaciones avanzadas de consultas:</strong> Se implementó un caché temporal para los encabezados de Legajos, se unificó la lectura de horarios y fechas del turnero en bloques de celdas y se removieron consultas duplicadas a Sheets en reservas y cancelaciones, disminuyendo drásticamente el consumo de cuota del servidor.</li>
+          </ul>
+        </div>
+        <div class="changelog-section">
+          <h4>📌 Historial Reciente (v2.4.6)</h4>
+          <ul>
+            <li><strong>Lectura optimizada de configuración:</strong> Agrupación de todas las celdas de configuración e información (I10:I21) en una única consulta al servidor, reduciendo los tiempos de carga en un 90% y previniendo sobrecargas.</li>
+            <li><strong>Lista de espera para pacientes:</strong> Opción automática para unirse a la lista de espera cuando el turnero esté cerrado o todos los horarios se encuentren ocupados (siempre que la lista esté habilitada en I10).</li>
+          </ul>
+        </div>
+        <div class="changelog-section">
+          <h4>📌 Historial Reciente (v2.4.5)</h4>
+          <ul>
+            <li><strong>Ticket de Solicitud de Medicación Exitosa:</strong> Al solicitar recetas de medicamentos, se despliega un cuadro emergente persistente tipo ticket con la fecha exacta a partir de la cual estará disponible.</li>
+            <li><strong>Instrucciones y Horarios de Entrega:</strong> El ticket de éxito ahora detalla con precisión los días de entrega (Lunes y Miércoles), los horarios disponibles (9 a 13 hs y 17 a 19 hs) y el método de pago en efectivo, asegurando que el paciente cuente con toda la información clave al instante.</li>
+          </ul>
+        </div>
+        <div class="changelog-section">
+          <h4>📌 Historial Reciente (v2.4.4)</h4>
+          <ul>
+            <li><strong>Aviso de Cambio de Celular:</strong> Se integró un cartel informativo en la pantalla de ingreso con enlace directo al WhatsApp del consultorio (3571-592323), con descarte dinámico.</li>
+            <li><strong>Acceso de Contacto en Menú:</strong> Se incorporó un aviso interno superior descriptivo y una cuarta tarjeta verde estática oficial de WhatsApp dentro de la grilla de información del menú.</li>
+            <li><strong>Icono Vectorial de WhatsApp Oficial:</strong> Reemplazados los logotipos de contacto por el vector SVG oficial, nítido y de alta definición de WhatsApp.</li>
+            <li><strong>Descarte Nativo HTML:</strong> La cruz de cierre en las tarjetas informativas ahora responde a nivel de marcado (HTML inline onclick), haciendo que el cierre sea 100% instantáneo y libre de dependencias.</li>
+          </ul>
+        </div>
+        <div class="changelog-section">
+          <h4>📌 Historial Reciente (v2.4.3)</h4>
+          <ul>
+            <li><strong>Log de Auditoría Enriquecido:</strong> El historial en la hoja "Dialogos" ahora inyecta automáticamente el nombre completo, el nivel de acceso del paciente y la traducción legible de la fecha ("dd/MM/yyyy") dentro del campo META_JSON, facilitando su lectura sin cambiar la estructura original de 5 columnas.</li>
+            <li><strong>Lista de Espera de 8 Columnas:</strong> Se expandió el registro de lista de espera a 8 columnas agregando espacios para "Ultima atencion", "Estado" (que quedan en blanco para edición manual) e ingresando la fecha/hora exacta en la columna "fecha solicitud".</li>
+            <li><strong>Icono Vectorial Premium:</strong> Reemplazados los emojis de personas (MSN) por un icono
+              vectorial SVG premium de doble tono integrado con el sistema visual de la app.</li>
+            <li><strong>Pantalla Informativa Reestructurada:</strong> Añadido un micro-dashboard de fechas de
+              atención/turnos para usuarios no autorizados, y una sección de ayuda amigable explicando la metodología de
+              lista de espera y asignación de cupos.</li>
+            <li><strong>Acceso para Usuarios Restringidos:</strong> Los pacientes con acceso "no permitido" ahora pueden
+              ingresar al sistema. Se les muestra una pantalla informativa especial indicando que sus funciones
+              completas se activarán tras su primera consulta.</li>
+            <li><strong>Lista de Espera:</strong> Los usuarios restringidos pueden unirse a una lista de espera. El
+              sistema comprueba automáticamente si ya están anotados y, si no, los registra en Google Sheets de forma
+              100% segura usando bloqueo concurrente (LockService).</li>
+            <li><strong>Pantalla de Confirmación Premium:</strong> Al reservar exitosamente, se despliega una tarjeta de
+              confirmación estilo "ticket" con animación de check, detalles completos del turno y un botón para copiar
+              los datos fácilmente en un clic.</li>
+            <li><strong>Ingreso de Pacientes Nuevos:</strong> Ahora los pacientes de primera atención pueden
+              registrarse, iniciar sesión y reservar sus turnos de forma autónoma.</li>
+            <li><strong>Panel Informativo en Tiempo Real:</strong> El menú principal ahora muestra las fechas de próxima
+              atención, entrega de turnos y entrega de medicación extraídas automáticamente del consultorio.</li>
+            <li><strong>Detección y Fechas Inteligentes:</strong> Las fechas de próxima atención se muestran ordenadas
+              verticalmente e incluyen el nombre del día en español automáticamente.</li>
+          </ul>
+        </div>
+        <div class="changelog-section">
+          <h4>🎨 Diseño y Experiencia de Usuario (UX/UI)</h4>
+          <ul>
+            <li><strong>Ocultación Automática de Cabecera:</strong> Al ingresar a la pantalla de selección de turnos, el
+              encabezado superior se oculta dinámicamente con una animación de deslizamiento para maximizar el espacio
+              útil en pantalla, permitiendo ver las fechas apiladas a pantalla completa. Incluye una pestaña superior
+              para redesplegar los ajustes de forma manual.</li>
+            <li><strong>Interfaz Premium:</strong> Se implementó un diseño moderno tipo Dashboard con la tipografía
+              <em>Plus Jakarta Sans</em>, tarjetas interactivas de cristal (glassmorphism) y transiciones fluidas.
+            </li>
+            <li><strong>Botones de Acción con Iconos:</strong> Menú renovado con accesos rápidos estructurados en
+              rejilla.</li>
+            <li><strong>Iconografía y Encabezado Adaptativo:</strong> Iconos más claros y sutiles (eliminado la mano
+              saludando, mamadera y tubo de ensayo), y botones de cabecera adaptables en celular para evitar que se
+              corten.</li>
+          </ul>
+        </div>
+        <div class="changelog-section">
+          <h4>🛠️ Mejoras y Estabilidad</h4>
+          <ul>
+            <li><strong>Advertencia de Pago Garantizada:</strong> La advertencia de pago anticipado se muestra siempre
+              que el turno lo requiera, ocultando únicamente el bloque de CBU en caso de no haber datos cargados en el
+              consultorio.</li>
+            <li><strong>Optimización de Rejilla de Formularios:</strong> Se unificó el espaciado vertical y horizontal
+              de los campos en el modal de registro y la pantalla de Mis Datos para una presentación simétrica en
+              móviles.</li>
+            <li><strong>Pago Anticipado Inteligente:</strong> Se exige transferencia anticipada a pacientes nuevos en
+              todos sus horarios, y a pacientes regulares únicamente en turnos anteriores a las 10:00.</li>
+            <li><strong>Preferencia de Inicio Normal:</strong> La aplicación siempre se inicia por defecto en tamaño
+              normal, manteniendo la opción de alternar a tamaño de accesibilidad manualmente.</li>
+            <li><strong>Doble Protección de Escala Móvil:</strong> Se integró la etiqueta meta viewport en el servidor y
+              se normalizaron las escalas del tamaño de accesibilidad para un calce perfecto.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-actions" style="padding: 16px 24px; border-top: 1px solid var(--border);">
+        <button id="changelogOk" class="btn primary" style="width:100%">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🆕 Modal de Registro -->
+  <div id="regModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3 style="margin-bottom:12px;">Crear usuario nuevo</h3>
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label>DNI *</label>
+          <input id="r_dni" type="text" inputmode="numeric" placeholder="Ej: 30123456">
+        </div>
+        <div class="form-field">
+          <label>Contacto (teléfono) *</label>
+          <input id="r_contacto" type="tel" inputmode="tel" placeholder="Ej: 3512345678">
+        </div>
+
+        <div class="form-field">
+          <label>Apellido *</label>
+          <input id="r_apellido" type="text" placeholder="Apellido">
+        </div>
+        <div class="form-field">
+          <label>Nombre *</label>
+          <input id="r_nombre" type="text" placeholder="Nombre">
+        </div>
+
+        <div class="form-field">
+          <label>Domicilio *</label>
+          <input id="r_domicilio" type="text" placeholder="Calle 1234">
+        </div>
+        <div class="form-field">
+          <label>Localidad *</label>
+          <input id="r_localidad" type="text" placeholder="Ciudad / Localidad">
+        </div>
+
+        <div class="form-field full-width">
+          <label>Tipo *</label>
+          <select id="r_tipo" class="btn" style="width:100%">
+            <option value="primera atencion">Primera atención</option>
+            <option value="paciente en tratamiento">Paciente en tratamiento</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="muted" id="regMsg" style="margin-bottom:12px;"></p>
+      <div class="modal-actions">
+        <button id="regCancel" class="btn">Cerrar</button>
+        <button id="regOk" class="btn primary">Registrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🆕 Modal de Reserva Exitosa -->
+  <div id="successModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 54px; margin-bottom: 12px; animation: bounceIn 0.6s ease;">✅</div>
+      <h3 style="font-size: 22px; margin-bottom: 8px; font-weight: 800;">¡Reserva Confirmada!</h3>
+      <p class="muted" style="margin-bottom: 20px;">Tu turno ha sido registrado correctamente.</p>
+
+      <!-- Ticket Card -->
+      <div
+        style="background: var(--bg); border: 1px dashed var(--border); border-radius: 16px; padding: 18px; text-align: left; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="muted" style="font-size: 13.5px;">Fecha:</span>
+          <strong style="font-size: 14.5px;" id="successFecha">—</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="muted" style="font-size: 13.5px;">Horario:</span>
+          <strong style="font-size: 14.5px;" id="successHora">—</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="muted" style="font-size: 13.5px;">Paciente:</span>
+          <strong style="font-size: 14.5px;" id="successPaciente">—</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+          <span class="muted" style="font-size: 13.5px;">DNI:</span>
+          <strong style="font-size: 14.5px;" id="successDni">—</strong>
+        </div>
+
+        <!-- Si requiere transferencia, mostrar aviso dinámico -->
+        <div id="successTransferNotice"
+          style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 13px; display: none;">
+          <div style="color: var(--accent-2); font-weight: 700; margin-bottom: 8px;">📢 Requiere transferencia
+            anticipada para confirmar la reserva.</div>
+          <div id="successTransferDetails"
+            style="background: rgba(255, 107, 107, 0.08); border: 1px dashed var(--border); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px; white-space: pre-wrap; color: var(--text); line-height: 1.4; display: none;">
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="btnCopySuccess" class="btn" style="width: 100%;">📋 Copiar datos del turno</button>
+        <button id="btnExitSuccess" class="btn primary" style="width: 100%;">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🆕 Modal de Medicación Exitosa -->
+  <div id="medSuccessModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 54px; margin-bottom: 12px; animation: bounceIn 0.6s ease;">✅</div>
+      <h3 style="font-size: 22px; margin-bottom: 8px; font-weight: 800;">Solicitud Registrada</h3>
+      <p class="muted" style="margin-bottom: 20px;">Tu pedido de medicación se ha procesado con éxito.</p>
+
+      <!-- Ticket Card -->
+      <div style="background: var(--bg); border: 1px dashed var(--border); border-radius: 16px; padding: 18px; text-align: left; margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
+        <div style="margin-bottom: 12px;">
+          <span class="muted">Disponible a partir del:</span><br>
+          <strong style="font-size: 16px; color: var(--accent);" id="medSuccessFecha">—</strong>
+        </div>
+        <hr style="border: none; border-top: 1px dashed var(--border); margin: 12px 0;">
+        <div style="font-weight: 700; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          📦 Entrega de medicación
+        </div>
+        <div style="margin-bottom: 6px;">
+          <strong>🗓️ Días de entrega:</strong> Lunes y Miércoles
+        </div>
+        <div style="margin-bottom: 12px;">
+          <strong>🕘 Horarios:</strong> 9 a 13 hs | 17 a 19 hs
+        </div>
+        <div style="color: var(--accent-2); font-weight: 700; font-size: 13px;">
+          💵 Pagos en efectivo
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button id="btnExitMedSuccess" onclick="document.getElementById('medSuccessModal').classList.add('hidden');" class="btn primary" style="width: 100%;">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🆕 Modal de Información sobre medicación -->
+  <div id="medDetailModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 8px;">📦</div>
+      <h3 style="font-size: 22px; margin-bottom: 8px; font-weight: 800;">Información sobre medicación</h3>
+      <p class="muted" style="margin-bottom: 20px;">Información completa sobre la recepción de tus medicamentos.</p>
+
+      <div style="background: var(--bg); border: 1px dashed var(--border); border-radius: 16px; padding: 18px; text-align: left; margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
+        <div style="margin-bottom: 12px;">
+          <span class="muted">🗓️ Disponible a partir de:</span><br>
+          <strong style="font-size: 15px; color: var(--accent-2);" id="medInfoFechaDisponibilidad">—</strong>
+        </div>
+        <hr style="border: none; border-top: 1px dashed var(--border); margin: 12px 0;">
+        <div style="margin-bottom: 12px;">
+          <span class="muted">🕘 Horarios de entrega:</span><br>
+          <strong style="font-size: 15px; color: var(--text);" id="medInfoHorariosEntrega">—</strong>
+        </div>
+        <!-- 
+        <hr style="border: none; border-top: 1px dashed var(--border); margin: 12px 0;">
+        <div>
+          <span class="muted">⏳ Fecha límite para solicitar:</span><br>
+          <strong style="font-size: 15px; color: var(--accent);" id="medInfoFechaLimite">—</strong>
+        </div>
+        -->
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button onclick="document.getElementById('medDetailModal').classList.add('hidden');" class="btn primary" style="width: 100%;">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🆕 Modal de Precio Total de Medicación -->
+  <div id="precioMedModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 8px;">💰</div>
+      <h3 style="font-size: 22px; margin-bottom: 8px; font-weight: 800;">Solicitar precio</h3>
+      <p class="muted" style="margin-bottom: 20px;">Valor total estimado de medicación y consulta.</p>
+
+      <div id="precioMedBody" style="background: var(--bg); border: 1px dashed var(--border); border-radius: 16px; padding: 18px; text-align: left; margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
+        Cargando…
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button onclick="document.getElementById('precioMedModal').classList.add('hidden');" class="btn primary" style="width: 100%;">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+    /* ===== Estado ===== */
+    let FORCE_DATOS_GATE = false; // si true, obliga a completar "Mis datos" antes de usar el sistema
+
+    let CONFIG = null;
+    let PROFILE = null;
+    let FECHAS = [];
+    let HORAS = {};
+
+    /* ===== Utils ===== */
+    function needsContactoUpdate(profile) {
+      const telOk = /^\+?\d{7,15}$/.test(String(profile?.telefono || '').replace(/\s+/g, ''));
+      const domOk = String(profile?.domicilio || '').trim().length >= 5;
+      return !(telOk && domOk);
+    }
+
+    function showGateNoticeDatos() {
+      // Inserta/actualiza un aviso en la pantalla de datos
+      let noticeEl = document.querySelector('#screenDatos .notice');
+      if (!noticeEl) {
+        noticeEl = document.createElement('div');
+        noticeEl.className = 'notice';
+        // Insertar antes del primer .row
+        const firstRow = document.querySelector('#screenDatos .row');
+        if (firstRow && firstRow.parentNode) firstRow.parentNode.insertBefore(noticeEl, firstRow);
+      }
+      noticeEl.textContent = 'Para continuar, completá teléfono (7–15 dígitos, puede llevar +) y domicilio (mín. 5 caracteres).';
+      noticeEl.style.display = 'block';
+    }
+
+    const $ = s => document.querySelector(s);
+    function toast(msg, ms = 2400) { const el = $('#toast'); el.textContent = msg; el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), ms); }
+    function setScreen(id) {
+      ['screenLogin', 'screenMenu', 'screenSacar', 'screenReservas', 'screenMed', 'screenDatos', 'screenNoPermitido'].forEach(x => {
+        const el = $('#' + x);
+        if (el) el.style.display = (x === id ? 'block' : 'none');
+      });
+      $('#logout').style.display = (id !== 'screenLogin' && id !== 'screenNoPermitido') ? 'inline-block' : 'none';
+
+      // Controlar la ocultación del header para screenSacar
+      const body = document.body;
+      body.classList.remove('header-expanded');
+
+      const tabIcon = $('#headerTabIcon');
+      if (tabIcon) tabIcon.textContent = '▼ Mostrar Ajustes';
+
+      if (id === 'screenSacar') {
+        body.classList.add('header-hidden');
+      } else {
+        body.classList.remove('header-hidden');
+      }
+    }
+
+    function toggleHeaderForce() {
+      const body = document.body;
+      const isExpanded = body.classList.toggle('header-expanded');
+      const tabIcon = $('#headerTabIcon');
+      if (tabIcon) {
+        tabIcon.textContent = isExpanded ? '▲ Ocultar Ajustes' : '▼ Mostrar Ajustes';
+      }
+    }
+    function applyTheme(t) { document.body.setAttribute('data-theme', t); localStorage.setItem('theme', t); $('#toggleTheme').textContent = (t === 'dark' ? '☀️ Claro' : '🌑 Oscuro'); }
+    function initTheme() { applyTheme(localStorage.getItem('theme') || 'dark'); }
+    function applySize(on) { document.body.classList.toggle('mobile-large', !!on); localStorage.setItem('mobileLarge', on ? '1' : '0'); $('#toggleSize').textContent = on ? '📱 Tamaño normal' : '📱 Tamaño grande'; }
+    function initSize() {
+      applySize(false);
+    }
+    function normDni(x) { return String(x || '').replace(/\D+/g, '').replace(/^0+/, ''); }
+    function toUC(s) { return String(s || '').trim().toUpperCase().replace(/\s+/g, ' '); }
+    function fmtHora(h) {
+      if (!h) return '';
+      if (h instanceof Date) {
+        const hh = String(h.getHours()).padStart(2, '0');
+        const mm = String(h.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+      }
+      const s = String(h);
+      const m = s.match(/(\d{1,2}):(\d{2})/);
+      if (m) return `${('0' + m[1]).slice(-2)}:${m[2]}`;
+      return s;
+    }
+
+    function formatFechaConDia(str) {
+      if (!str) return '';
+      let clean = str.trim();
+      if (/[a-zA-Záéíóú]/.test(clean)) return clean;
+
+      let parts = clean.split('/');
+      if (parts.length >= 2) {
+        let day = parseInt(parts[0], 10);
+        let month = parseInt(parts[1], 10) - 1;
+        let year = parts[2] ? parseInt(parts[2], 10) : new Date().getFullYear();
+        if (year < 100) year += 2000;
+
+        let d = new Date(year, month, day);
+        if (!isNaN(d.getTime())) {
+          const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+          const diaSemana = dias[d.getDay()];
+          if (parts.length === 2) {
+            return `${diaSemana} ${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}`;
+          } else {
+            return `${diaSemana} ${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+          }
+        }
+      }
+      return clean;
+    }
+
+    /* ===== Barra de progreso ===== */
+    function setBusy(on, text) {
+      const p = $('#progress'); const t = $('#progressText');
+      if (text) t.textContent = text;
+      p.classList.toggle('hidden', !on);
+      document.querySelectorAll('button.btn').forEach(b => b.disabled = !!on);
+    }
+
+    /* ===== Modal genérico (confirmaciones) ===== */
+    function showModal(title, html, onOk) {
+      $('#modalTitle').textContent = title || 'Confirmar';
+      $('#modalText').innerHTML = html || '';
+      $('#modal').classList.remove('hidden');
+      const close = () => $('#modal').classList.add('hidden');
+      $('#modalCancel').onclick = () => close();
+      $('#modalOk').onclick = async () => { try { setBusy(true, 'Procesando…'); await onOk?.(); } finally { setBusy(false); close(); } };
+    }
+
+    /* ===== Modal Registro ===== */
+    function openRegModal() {
+      // limpiar campos
+      ['r_dni', 'r_contacto', 'r_apellido', 'r_nombre', 'r_domicilio', 'r_localidad'].forEach(id => { const el = $('#' + id); if (el) el.value = ''; });
+      $('#r_tipo').value = 'primera atencion';
+      $('#regMsg').textContent = '';
+      $('#regModal').classList.remove('hidden');
+    }
+    function closeRegModal() { $('#regModal').classList.add('hidden'); }
+
+    /* ===== Config y login ===== */
+    function loadConfig() {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(res => {
+            CONFIG = res;
+            FECHAS = res?.fechas || [];
+            updateClinicInfo();
+            resolve(res);
+          })
+          .withFailureHandler(err => { console.error(err); reject(err); })
+          .pub_getConfig();
+      });
+    }
+
+    function updateClinicInfo() {
+      if (!CONFIG) return;
+
+      const pat1 = formatFechaConDia(CONFIG.info?.proximaAtencion1);
+      const pat2 = formatFechaConDia(CONFIG.info?.proximaAtencion2);
+      const pat = $('#infoProximaAtencion');
+      if (pat) {
+        pat.innerHTML = '';
+        if (pat1 || pat2) {
+          const items = [pat1, pat2].filter(Boolean);
+          pat.innerHTML = items.map(x => `<div>${x}</div>`).join('');
+        } else {
+          pat.textContent = 'Sin fecha registrada';
+        }
+      }
+
+      const pet = $('#infoEntregaTurnos');
+      const pem = $('#infoEntregaMed');
+      if (pet) pet.textContent = CONFIG.info?.fechaEntregaTurnos || 'Sin fecha registrada';
+      if (pem) pem.textContent = CONFIG.info?.fechaMedicacion || 'Sin fecha registrada';
+      const medEl = document.getElementById('medFecha');
+      if (medEl) {
+        medEl.textContent = CONFIG.info?.fechaMedicacion || '—';
+      }
+    }
+    function doLogin() {
+      const dni = normDni($('#dni').value);
+      if (!dni) { $('#loginMsg').textContent = 'Ingresá un DNI válido.'; return; }
+      $('#loginMsg').textContent = 'Validando…';
+      setBusy(true, 'Conectando…');
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(false);
+          if (!res?.ok) { $('#loginMsg').textContent = res?.error || 'No autorizado.'; return; }
+          PROFILE = res.perfil || null;
+          if (!PROFILE) { $('#loginMsg').textContent = 'Perfil no disponible.'; return; }
+          localStorage.setItem('dni', PROFILE.dni || dni);
+          $('#userName').textContent = PROFILE.nombre || PROFILE.dni;
+
+          loadConfig().then(() => { reflectGatesInMenu(); }).catch(() => { });
+          renderMenuNotices();
+          loadConfig().then(() => { reflectGatesInMenu(); }).catch(() => { });
+          renderMenuNotices();
+
+          // Comprobar si el usuario no está permitido
+          if (String(PROFILE.acceso || '').toLowerCase().trim() === 'no permitido') {
+            setScreen('screenNoPermitido');
+            cargarEstadoListaEspera();
+            cargarFechasNoPermitido();
+          } else {
+            // Gate de datos de contacto
+            FORCE_DATOS_GATE = needsContactoUpdate(PROFILE);
+            if (FORCE_DATOS_GATE) {
+              // Pre-cargá el form y forzá validación
+              fillDatos();
+              setScreen('screenDatos');
+              showGateNoticeDatos();
+              validateDatosForm();
+              toast('Antes de continuar, completá tus datos.');
+            } else {
+              setScreen('screenMenu');
+            }
+          }
+        })
+        .withFailureHandler(err => { setBusy(false); console.error(err); $('#loginMsg').textContent = 'Error al validar.'; })
+        .pub_login(dni);
+    }
+
+    /* ===== Menú: avisos/gates ===== */
+    function renderMenuNotices() {
+      const n = $('#notices'); n.innerHTML = '';
+      if (CONFIG?.publicOn === false) {
+        const div = document.createElement('div'); div.className = 'notice'; div.textContent = '⛔ Turnero cerrado por el momento.'; n.appendChild(div);
+      }
+      if (CONFIG?.medOn === false) {
+        const div = document.createElement('div'); div.className = 'notice'; div.textContent = '📋 La solicitud de medicación está deshabilitada.'; n.appendChild(div);
+      }
+    }
+    function reflectGatesInMenu() {
+      const btnMed = $('#goMed');
+      if (btnMed) {
+        btnMed.disabled = !CONFIG?.medOn;
+        btnMed.title = CONFIG?.medOn ? '' : 'Deshabilitado por el momento';
+      }
+      const btnReservas = $('#goReservas');
+      if (btnReservas) {
+        const canCancel = CONFIG?.cancelOn !== false;
+        btnReservas.disabled = !canCancel;
+        btnReservas.title = canCancel ? '' : 'Deshabilitado por el momento';
+      }
+    }
+
+    /* ===== Sacar turno ===== */
+    function renderWaitingListNotice(container) {
+      if (!CONFIG?.listaEsperaOn) return;
+
+      let listCont = container.querySelector('.waiting-list-notice-card');
+      if (!listCont) {
+        listCont = document.createElement('div');
+        listCont.className = 'waiting-list-notice-card card';
+        listCont.style = 'border-left: 4px solid var(--danger); margin-top: 16px; width: 100%; text-align: left; background: rgba(239, 68, 68, 0.03); border-color: rgba(239, 68, 68, 0.1); padding: 18px;';
+        container.appendChild(listCont);
+      }
+      listCont.innerHTML = `
+        <h4 style="font-size: 15px; margin-bottom: 8px; font-weight: 700; color: var(--danger);">📋 Lista de Espera Disponible</h4>
+        <p class="muted" style="font-size: 13.5px; line-height: 1.5; margin-bottom: 12px;">
+          Actualmente no hay turnos disponibles o el turnero está cerrado. Como paciente registrado, podés anotarte en la lista de espera para que te asignemos un cupo.
+        </p>
+        <div class="waiting-list-status-inner" style="min-height: 44px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+          <span>Cargando estado…</span>
+        </div>
+      `;
+      cargarEstadoListaEspera('.waiting-list-status-inner');
+    }
+
+    function checkAllSlotsFullyBooked() {
+      if (!CONFIG?.listaEsperaOn) return;
+
+      const slotBodies = document.querySelectorAll('.slot-body');
+      let allBooked = true;
+      let count = 0;
+      slotBodies.forEach(body => {
+        count++;
+        const txt = body.textContent.trim();
+        if (txt !== 'Sin horarios disponibles.' && txt !== '') {
+          allBooked = false;
+        }
+      });
+
+      if (allBooked && count > 0) {
+        const wrap = $('#slotsWrap');
+        renderWaitingListNotice(wrap);
+      }
+    }
+
+    function renderSlots() {
+      const wrap = $('#slotsWrap'); wrap.innerHTML = '';
+      
+      const showWaitingList = !!CONFIG?.listaEsperaOn;
+
+      if (!CONFIG?.publicOn) {
+        $('#publicState').textContent = '⛔ Turnero cerrado por el momento.';
+        if (showWaitingList) {
+          renderWaitingListNotice(wrap);
+        }
+        return;
+      }
+      if (!FECHAS || FECHAS.length === 0) {
+        $('#publicState').textContent = 'No hay fechas disponibles.';
+        if (showWaitingList) {
+          renderWaitingListNotice(wrap);
+        }
+        return;
+      }
+      $('#publicState').textContent = 'Elegí horario en alguna de las dos fechas.';
+
+      const makeCard = (slot) => {
+        const card = document.createElement('div');
+        card.className = 'slot-card';
+        card.innerHTML = `
+      <div class="slot-head">
+        <div><strong>${slot.label}</strong></div>
+        <div><button class="btn small" data-col="${slot.col}">Actualizar</button></div>
+      </div>
+      <div class="slot-body" id="body-${slot.col}">Cargando…</div>
+    `;
+        return card;
+      };
+
+      FECHAS.slice(0, 2).forEach(slot => wrap.appendChild(makeCard(slot)));
+      FECHAS.slice(0, 2).forEach(slot => refreshHoras(slot.col));
+    }
+
+    /*funcion antes de aviso de horarios
+    function refreshHoras(col){
+      const body = $('#body-' + col);
+      body.textContent = 'Cargando…';
+      setBusy(true,'Cargando horarios…');
+      google.script.run
+        .withSuccessHandler(res=>{
+          setBusy(false);
+          if (!res?.ok) { body.textContent = res?.error || 'Error'; return; }
+          HORAS[col] = res.horas || [];
+          if (!HORAS[col].length) { body.textContent = 'Sin horarios disponibles.'; return; }
+          body.innerHTML = '';
+          HORAS[col].forEach(h => {
+            const btn = document.createElement('button');
+            btn.className = 'btn hour-btn';
+            btn.textContent = fmtHora(h.hora);
+            btn.onclick = ()=> confirmarReserva(col, fmtHora(h.hora));
+            body.appendChild(btn);
+          });
+        })
+        .withFailureHandler(err=>{ setBusy(false); console.error(err); body.textContent = 'Error al cargar horarios.'; })
+        .pub_listHorasForCol(col);
+    }*/
+    //avisos por horarios
+    function refreshHoras(col) {
+      const body = $('#body-' + col);
+      body.textContent = 'Cargando…';
+      setBusy(true, 'Cargando horarios…');
+
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(false);
+          if (!res?.ok) { body.textContent = res?.error || 'Error'; return; }
+
+          HORAS[col] = res.horas || [];
+          if (!HORAS[col].length) {
+            body.textContent = 'Sin horarios disponibles.';
+            checkAllSlotsFullyBooked();
+            return;
+          }
+
+          body.innerHTML = '';
+
+          HORAS[col].forEach(h => {
+            const btn = document.createElement('button');
+            btn.className = 'btn hour-btn';
+
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = fmtHora(h.hora);
+            btn.appendChild(timeSpan);
+
+            if (h.requiereTransferencia) {
+              const badge = document.createElement('span');
+              badge.className = 'badge-payment';
+              badge.textContent = 'Pago Anticipado';
+              btn.appendChild(badge);
+              btn.classList.add('requiere-transferencia');
+            }
+
+            btn.onclick = () => confirmarReserva(col, fmtHora(h.hora), h.requiereTransferencia);
+            body.appendChild(btn);
+          });
+        })
+        .withFailureHandler(err => {
+          setBusy(false);
+          console.error(err);
+          body.textContent = 'Error al cargar horarios.';
+        })
+        .pub_listHorasForCol(col, PROFILE?.dni);
+    }
+
+
+    function confirmarReserva(col, hora, requiereTransferencia) {
+      const slot = FECHAS.find(s => s.col === col);
+      if (!slot) return;
+      const dni = PROFILE?.dni; const nombre = PROFILE?.nombre || '';
+      const resumen = `
+    <strong>Confirmar reserva</strong><br>
+    Fecha: ${slot.label}<br>
+    Hora: ${hora}<br>
+    DNI: ${dni}<br>
+    Nombre: ${nombre}<br><br>
+    <small>Se confirmará en la planilla. Puede demorar un instante…</small>
+  `;
+      showModal('Confirmar', resumen, () => new Promise((resolve, reject) => {
+        $('#publicState').textContent = 'Reservando…';
+        google.script.run
+          .withSuccessHandler(res => {
+            if (!res?.ok) { toast(res?.error || 'No se pudo reservar'); $('#publicState').textContent = 'Elegí horario en alguna de las dos fechas.'; return resolve(); }
+            const reasigMsg = res.reasignado ? ' (Saldo a favor aplicado)' : '';
+            toast('✅ Turno reservado' + reasigMsg);
+            $('#publicState').textContent = `Reservado: ${slot.label} — ${hora} ✓${reasigMsg}`;
+            refreshHoras(col);
+            mostrarModalReservaExitosa(slot.label, hora, reasigMsg, requiereTransferencia);
+            resolve();
+          })
+          .withFailureHandler(err => { console.error(err); toast('Error al reservar'); $('#publicState').textContent = 'Ocurrió un error. Intentá nuevamente.'; reject(err); })
+          .pub_reservar(slot.dateMs, hora, dni, nombre);
+      }));
+    }
+
+    function mostrarModalReservaExitosa(fechaLabel, horaText, reasigMsg, requiereTransferencia) {
+      $('#successFecha').textContent = fechaLabel;
+      $('#successHora').textContent = horaText + reasigMsg;
+      $('#successPaciente').textContent = PROFILE?.nombre || '—';
+      $('#successDni').textContent = PROFILE?.dni || '—';
+
+      const transferNotice = $('#successTransferNotice');
+      const transferDetails = $('#successTransferDetails');
+      const datosTrans = CONFIG?.info?.datosTransferencia || '';
+
+      if (transferNotice) {
+        if (requiereTransferencia) {
+          transferNotice.style.display = 'block';
+          if (transferDetails) {
+            if (datosTrans) {
+              transferDetails.textContent = datosTrans;
+              transferDetails.style.display = 'block';
+            } else {
+              transferDetails.style.display = 'none';
+            }
+          }
+        } else {
+          transferNotice.style.display = 'none';
+        }
+      }
+
+      // Configurar botones de acción
+      $('#btnExitSuccess').onclick = () => {
+        $('#successModal').classList.add('hidden');
+      };
+
+      let appointmentText = `Reserva de Turno Confirmada:\nFecha: ${fechaLabel}\nHorario: ${horaText}${reasigMsg}\nPaciente: ${PROFILE?.nombre || '—'}\nDNI: ${PROFILE?.dni || '—'}`;
+      if (requiereTransferencia) {
+        appointmentText += `\n\n⚠️ Requiere transferencia anticipada para confirmar la reserva.`;
+        if (datosTrans) {
+          appointmentText += `\n\nDatos de transferencia:\n${datosTrans}`;
+        }
+      }
+
+      $('#btnCopySuccess').onclick = () => {
+        copiarDatosTurno(appointmentText);
+      };
+
+      $('#successModal').classList.remove('hidden');
+    }
+
+    function copiarDatosTurno(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        toast('📋 Datos copiados al portapapeles');
+      }).catch(err => {
+        console.error('Error al copiar: ', err);
+        const inp = document.createElement('textarea');
+        inp.value = text;
+        document.body.appendChild(inp);
+        inp.select();
+        document.execCommand('copy');
+        document.body.removeChild(inp);
+        toast('📋 Datos copiados');
+      });
+    }
+
+    /* ===== Mis reservas + cancelación ===== */
+    function loadMisReservas() {
+      const dni = PROFILE?.dni;
+      const cont = $('#reservasList'); cont.innerHTML = 'Cargando…';
+      $('#reservasMeta').textContent = '';
+
+      const cancelNotice = $('#reservasNotice');
+      if (CONFIG?.cancelOn === false) { cancelNotice.style.display = 'block'; cancelNotice.textContent = 'La cancelación está temporalmente deshabilitada.'; }
+      else { cancelNotice.style.display = 'none'; cancelNotice.textContent = ''; }
+
+      setBusy(true, 'Cargando reservas…');
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(false);
+          const arr = res?.reservas || [];
+          if (!arr.length) { cont.innerHTML = '<div class="muted">No tenés reservas futuras.</div>'; return; }
+          cont.innerHTML = '';
+          arr.forEach(r => {
+            const d = new Date(r.fechaMs);
+            const dd = d.toLocaleDateString();
+            const hh = r.hora;
+            const div = document.createElement('div');
+            div.className = 'item';
+            div.innerHTML = `<div><strong>${dd}</strong> — ${hh}</div>
+                         <div><button class="btn small">Cancelar</button></div>`;
+            const btn = div.querySelector('button');
+            btn.disabled = (CONFIG?.cancelOn === false);
+            btn.title = btn.disabled ? 'Temporalmente deshabilitado' : '';
+            btn.onclick = () => {
+              if (btn.disabled) return;
+              showModal('Cancelar turno', `¿Confirmás cancelar el turno del <strong>${dd}</strong> a las <strong>${hh}</strong>?`, () => {
+                return new Promise((resolve, reject) => {
+                  $('#reservasMeta').textContent = 'Cancelando…';
+                  google.script.run
+                    .withSuccessHandler(res2 => {
+                      if (!res2?.ok) { toast(res2?.error || 'No se pudo cancelar'); $('#reservasMeta').textContent = ''; return resolve(); }
+                      const msg = (res2.accion === 'limpiado') ? 'Turno cancelado (Pago preservado)' : 'Turno cancelado';
+                      toast('🗑️ ' + msg);
+                      $('#reservasMeta').textContent = msg + ' ✓';
+                      loadMisReservas();
+                      if (FECHAS?.length) FECHAS.forEach(s => refreshHoras(s.col));
+                      resolve();
+                    })
+                    .withFailureHandler(err => { console.error(err); toast('Error al cancelar'); $('#reservasMeta').textContent = ''; reject(err); })
+                    .pub_cancelar(dni, r.fechaMs, r.hora);
+                });
+              });
+            };
+            cont.appendChild(div);
+          });
+          $('#reservasMeta').textContent = `${arr.length} reserva(s) futura(s).`;
+        })
+        .withFailureHandler(err => { setBusy(false); console.error(err); cont.innerHTML = 'Error al cargar.'; })
+        .pub_misReservas(dni);
+    }
+
+    /* ===== Solicitar medicación ===== */
+    function loadMedFecha() {
+      const el = document.getElementById('medFecha');
+      if (!el) return;
+      setBusy(true, 'Cargando fecha…');   // ⟵ spinner global
+
+      google.script.run.withSuccessHandler(res => {
+        el.textContent = (res && res.ok && res.fecha) ? res.fecha : '—';
+        setBusy(false);                 // ⟵ ocultar spinner
+
+      }).withFailureHandler(_ => {
+        el.textContent = '—';
+      }).pub_getFechaMedicacion();
+    }
+
+
+    function openMedDetailModal() {
+      const fl = CONFIG?.info?.fechaLimiteMedicacion || 'Sin fecha registrada';
+      const he = CONFIG?.info?.horariosEntregaMedicacion || 'Sin horarios registrados';
+      const fd = CONFIG?.info?.fechaMedicacion || '—';
+
+      const elFl = $('#medInfoFechaLimite');
+      const elHe = $('#medInfoHorariosEntrega');
+      const elFd = $('#medInfoFechaDisponibilidad');
+
+      if (elFl) elFl.textContent = fl;
+      if (elHe) elHe.textContent = he;
+      if (elFd) elFd.textContent = fd;
+
+      $('#medDetailModal').classList.remove('hidden');
+    }
+
+    function renderMedResumen() {
+      loadMedFecha();
+
+      const n = $('#medResumen'); n.innerHTML = '';
+      const gate = $('#medGateNotice');
+      if (CONFIG?.medOn === false) {
+        gate.style.display = 'block';
+        gate.textContent = 'La solicitud de medicación está deshabilitada por el momento.';
+        $('#btnSolicitar').disabled = true;
+      } else {
+        gate.style.display = 'none';
+        gate.textContent = '';
+        $('#btnSolicitar').disabled = false;
+      }
+
+      // Mostrar / Ocultar botón de Precio Total según I22 (verPrecioMedOn)
+      const btnPrecio = $('#btnPrecioTotal');
+      if (btnPrecio) {
+        const rawVer = CONFIG?.info?.verPrecioMedOn;
+        const isVerPrecioOn = rawVer === true || String(rawVer || '').toLowerCase().trim() === 'true';
+        if (isVerPrecioOn) {
+          btnPrecio.style.display = 'block';
+          btnPrecio.onclick = abrirModalPrecioTotal;
+        } else {
+          btnPrecio.style.display = 'none';
+        }
+      }
+
+      const meds = [PROFILE?.fr1, PROFILE?.fr2, PROFILE?.fr3, PROFILE?.fr4, PROFILE?.fr5].filter(Boolean);
+      const txt = meds.length ? meds.join(' · ') : '(sin medicación registrada)';
+      const div = document.createElement('div');
+      div.className = 'notice';
+      div.textContent = `Actual: ${txt}`;
+      n.appendChild(div);
+    }
+
+    function abrirModalPrecioTotal() {
+      const modal = $('#precioMedModal');
+      const body = $('#precioMedBody');
+      body.innerHTML = '<span class="muted">Calculando precios…</span>';
+      modal.classList.remove('hidden');
+
+      const dni = PROFILE?.dni;
+      if (!dni) return;
+      google.script.run
+        .withSuccessHandler(res => {
+          if (!res || !res.ok) {
+            body.innerHTML = `<span style="color: var(--accent-2);">${res?.error || 'No se pudieron obtener los precios.'}</span>`;
+            return;
+          }
+          renderPrecioModalContent(res);
+        })
+        .withFailureHandler(err => {
+          console.error(err);
+          body.innerHTML = '<span style="color: var(--accent-2);">Error al calcular el precio.</span>';
+        })
+        .pub_calcularPrecioMedicacion(dni);
+    }
+
+    function renderPrecioModalContent(res) {
+      const body = $('#precioMedBody');
+      if (res.mensaje) {
+        body.innerHTML = `<span class="muted">${res.mensaje}</span>`;
+        return;
+      }
+
+      let noticeAcomp = res.acompanada ? `<div style="margin-top: 10px; font-size: 12px; color: var(--accent-2); font-weight: 600;">ℹ️ Tarifa acompañada aplicada</div>` : '';
+
+      body.innerHTML = `
+        <div style="margin-bottom: 12px;">
+          <span class="muted">📦 Medicación disponible:</span><br>
+          <strong style="font-size: 14.5px; color: var(--text);">${res.medicacionStr || '—'}</strong>
+        </div>
+        <hr style="border: none; border-top: 1px dashed var(--border); margin: 12px 0;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="muted">Precio total medicación:</span>
+          <strong style="font-family: monospace;">$${(res.totalMedicacion || 0).toLocaleString()}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="muted">Consulta:</span>
+          <strong style="font-family: monospace;">$${(res.precioConsulta || 25000).toLocaleString()}</strong>
+        </div>
+        <hr style="border: none; border-top: 1px dashed var(--border); margin: 12px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 16px;">
+          <strong>Total Final:</strong>
+          <strong style="font-size: 20px; color: #22c55e; font-family: monospace;">$${(res.totalFinal || 0).toLocaleString()}</strong>
+        </div>
+        ${noticeAcomp}
+        <p class="muted" style="margin-top: 14px; font-size: 11.5px; line-height: 1.4; text-align: center; font-style: italic;">
+          * Precios estimados de carácter orientativo y no contractual. Sujetos a modificaciones. S.E. u O.
+        </p>
+      `;
+    }
+    function solicitarMed() {
+      if (CONFIG?.medOn === false) { toast('La solicitud de medicación está deshabilitada.'); return; }
+      setBusy(true, 'Registrando solicitud…');
+      const dni = PROFILE?.dni;
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(false);
+          if (!res?.ok) return toast(res?.error || 'No se pudo solicitar');
+          
+          // Copiar fecha del formulario principal al modal de éxito
+          const fechaEntrega = $('#medFecha').textContent || '—';
+          $('#medSuccessFecha').textContent = fechaEntrega;
+          
+          // Mostrar modal de éxito
+          $('#medSuccessModal').classList.remove('hidden');
+        })
+        .withFailureHandler(err => { setBusy(false); console.error(err); toast('Error al solicitar'); })
+        .pub_solicitarMedicacion(dni);
+    }
+
+    /* ===== Mis datos ===== */
+    function validateDatosForm() {
+      const tel = ($('#d_tel').value || '').trim().replace(/\s+/g, '');
+      const dom = ($('#d_dom').value || '').trim();
+      const okTel = /^\+?\d{7,15}$/.test(tel);
+      const okDom = dom.length >= 5;
+      const btn = $('#btnGuardarDatos');
+      if (btn) {
+        btn.disabled = !(okTel && okDom);
+        btn.classList.toggle('disabled', btn.disabled);
+      }
+      return okTel && okDom;
+    }
+
+    function fillDatos() {
+      $('#d_dni').value = PROFILE?.dni || '';
+      $('#d_nombre').value = PROFILE?.nombre || '';
+      $('#d_tel').value = PROFILE?.telefono || '';
+      $('#d_dom').value = PROFILE?.domicilio || '';
+    }
+    function guardarDatos() {
+      if (!validateDatosForm()) {
+        toast('Completá los campos correctamente.');
+        return;
+      }
+      setBusy(true, 'Guardando…');
+      const dni = PROFILE?.dni;
+      const tel = ($('#d_tel').value || '').trim();
+      const dom = ($('#d_dom').value || '').trim();
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(false);
+          if (!res?.ok) return toast(res?.error || 'No se pudo guardar');
+          toast('✅ Datos actualizados');
+          PROFILE.telefono = tel;
+          PROFILE.domicilio = dom;
+          // Si estaba gateado, liberá el acceso
+          FORCE_DATOS_GATE = needsContactoUpdate(PROFILE);
+          if (!FORCE_DATOS_GATE) {
+            setScreen('screenMenu');
+            renderMenuNotices();
+            reflectMedButton();
+          } else {
+            showGateNoticeDatos();
+            validateDatosForm();
+          }
+        })
+        .withFailureHandler(err => { setBusy(false); console.error(err); toast('Error al guardar'); })
+        .pub_updateContacto(dni, tel, dom);
+    }
+
+
+    /* ===== Registro (modal) ===== */
+    function cleanTel(x) { return String(x || '').replace(/\s+/g, '').replace(/[^\d+]/g, ''); }
+    function validateRegister() {
+      const payload = {
+        dni: normDni($('#r_dni').value),
+        apellido: toUC($('#r_apellido').value),
+        nombre: toUC($('#r_nombre').value),
+        contacto: cleanTel($('#r_contacto').value),
+        domicilio: toUC($('#r_domicilio').value),
+        localidad: toUC($('#r_localidad').value),
+        tipo: String($('#r_tipo').value || '').toLowerCase()
+      };
+      const errors = [];
+      if (!payload.dni || payload.dni.length < 7) errors.push('DNI inválido.');
+      if (!payload.apellido) errors.push('Apellido es obligatorio.');
+      if (!payload.nombre) errors.push('Nombre es obligatorio.');
+      if (!/^\+?\d{7,15}$/.test(payload.contacto)) errors.push('Contacto inválido.');
+      if (!payload.domicilio) errors.push('Domicilio es obligatorio.');
+      if (!payload.localidad) errors.push('Localidad es obligatoria.');
+      if (!['primera atencion', 'paciente en tratamiento'].includes(payload.tipo)) errors.push('Tipo inválido.');
+      return { payload, errors };
+    }
+    function doRegister() {
+      const { payload, errors } = validateRegister();
+      if (errors.length) { $('#regMsg').textContent = errors[0]; return; }
+      $('#regMsg').textContent = 'Enviando…';
+      setBusy(true, 'Registrando…');
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(false);
+          if (!res?.ok) { $('#regMsg').textContent = res?.error || 'No se pudo registrar.'; return; }
+          $('#regMsg').textContent = '✅ Registro enviado. Será evaluado por el consultorio.';
+          toast('✅ Registro enviado');
+          $('#dni').value = payload.dni; // auto-completar login
+          setTimeout(() => closeRegModal(), 500);
+        })
+        .withFailureHandler(err => { setBusy(false); console.error(err); $('#regMsg').textContent = 'Error al registrar.'; })
+        .pub_registerUser(payload);
+    }
+
+    /* ===== Navegación ===== */
+    function reflectMedButton() {
+      const btnMed = $('#goMed');
+      if (btnMed) {
+        btnMed.disabled = !CONFIG?.medOn;
+        btnMed.title = CONFIG?.medOn ? '' : 'Deshabilitado por el momento';
+      }
+    }
+    function goMenu() {
+      if (FORCE_DATOS_GATE) {
+        setScreen('screenDatos');
+        showGateNoticeDatos();
+        validateDatosForm();
+        toast('Completá tus datos para continuar.');
+        return;
+      }
+      setScreen('screenMenu');
+      renderMenuNotices();
+      reflectMedButton();
+    }
+
+    function goSacar() {
+      setScreen('screenSacar');
+      $('#publicState').textContent = 'Cargando…';
+      setBusy(true, 'Cargando configuración…');
+      loadConfig().then(() => {
+        setBusy(false);
+        renderSlots();
+        setTimeout(() => {
+          FECHAS.forEach(s => {
+            const btn = document.querySelector(`.slot-head button[data-col="${s.col}"]`);
+            if (btn) btn.onclick = () => refreshHoras(s.col);
+          });
+        }, 0);
+      }).catch(() => { setBusy(false); $('#publicState').textContent = 'Error de configuración.'; });
+    }
+    function goReservas() {
+      if (CONFIG?.cancelOn === false) {
+        toast('La consulta/cancelación de reservas está deshabilitada por el momento.');
+        return;
+      }
+      setScreen('screenReservas');
+      loadMisReservas();
+    }
+    function goMed() { setScreen('screenMed'); renderMedResumen(); }
+    function goDatos() {
+      setScreen('screenDatos');
+      fillDatos();
+      if (FORCE_DATOS_GATE) showGateNoticeDatos();
+      validateDatosForm();
+    }
+
+    /* ===== Lista de espera para usuarios restringidos ===== */
+    function cargarEstadoListaEspera(containerSelector = '#waitingListStatus') {
+      const dni = PROFILE?.dni;
+      if (!dni) return;
+
+      const statusCont = $(containerSelector);
+      if (!statusCont) return;
+      statusCont.innerHTML = '<span class="muted" style="font-size: 13px;">Verificando lista de espera…</span>';
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res && res.registrado) {
+            statusCont.innerHTML = `<span style="color: var(--accent-2); font-weight: 700; display: flex; align-items: center; gap: 6px; font-size: 13.5px;">✓ Ya estás anotado en la lista de espera</span>`;
+          } else {
+            statusCont.innerHTML = `<button class="btn primary btn-join-waiting-list" style="width: 100%; min-height: 44px;">📋 Unirme a la Lista de Espera</button>`;
+            const btnJoin = statusCont.querySelector('.btn-join-waiting-list');
+            if (btnJoin) {
+              btnJoin.onclick = () => unirseAListaEspera(containerSelector);
+            }
+          }
+        })
+        .withFailureHandler(err => {
+          console.error(err);
+          statusCont.innerHTML = `<span style="color: var(--accent-2); font-weight: 600; font-size: 13.5px;">Error al consultar estado.</span>`;
+        })
+        .pub_checkWaitingList(dni);
+    }
+
+    function unirseAListaEspera(containerSelector = '#waitingListStatus') {
+      const dni = PROFILE?.dni;
+      const nombre = PROFILE?.nombre || '';
+      const tel = PROFILE?.telefono || '';
+      if (!dni) return;
+
+      setBusy(true, 'Registrando en lista de espera…');
+      google.script.run
+        .withSuccessHandler(res => {
+          setBusy(false);
+          if (res && res.ok) {
+            toast('📋 Anotado en la lista de espera');
+            cargarEstadoListaEspera(containerSelector);
+          } else {
+            toast(res?.error || 'No se pudo registrar');
+          }
+        })
+        .withFailureHandler(err => {
+          setBusy(false);
+          console.error(err);
+          toast('Error al registrarse en lista de espera');
+        })
+        .pub_joinWaitingList(dni, nombre, tel);
+    }
+
+    function cargarFechasNoPermitido() {
+      const atencionEl = $('#noPermitidoAtencion');
+      const turnosEl = $('#noPermitidoTurnos');
+      if (atencionEl) atencionEl.textContent = 'Cargando…';
+      if (turnosEl) turnosEl.textContent = 'Cargando…';
+
+      loadConfig().then(() => {
+        const pat1 = formatFechaConDia(CONFIG.info?.proximaAtencion1);
+        const pat2 = formatFechaConDia(CONFIG.info?.proximaAtencion2);
+        
+        if (atencionEl) {
+          atencionEl.innerHTML = '';
+          const items = [pat1, pat2].filter(Boolean);
+          if (items.length > 0) {
+            atencionEl.innerHTML = items.map(x => `<div>${x}</div>`).join('');
+          } else {
+            atencionEl.textContent = 'A confirmar';
+          }
+        }
+        
+        if (turnosEl) {
+          turnosEl.textContent = CONFIG.info?.fechaEntregaTurnos || 'A confirmar';
+        }
+      }).catch(err => {
+        console.error(err);
+        if (atencionEl) atencionEl.textContent = '—';
+        if (turnosEl) turnosEl.textContent = '—';
+      });
+    }
+
+    /* ===== Eventos ===== */
+    window.addEventListener('DOMContentLoaded', () => {
+      initTheme(); initSize();
+
+      $('#toggleTheme').onclick = () => {
+        const cur = document.body.getAttribute('data-theme') || 'dark';
+        applyTheme(cur === 'dark' ? 'light' : 'dark');
+      };
+      $('#toggleSize').onclick = () => {
+        const on = !document.body.classList.contains('mobile-large');
+        applySize(on);
+      };
+      $('#logout').onclick = () => { PROFILE = null; setScreen('screenLogin'); };
+      $('#btnLogoutNoPermitido').onclick = () => {
+        PROFILE = null;
+        localStorage.removeItem('dni');
+        setScreen('screenLogin');
+      };
+
+      $('#btnLogin').onclick = doLogin;
+      $('#dni').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+      $('#goSacar').onclick = goSacar;
+      $('#goReservas').onclick = goReservas;
+      $('#goMed').onclick = goMed;
+      $('#goDatos').onclick = goDatos;
+
+      $('#back1').onclick = goMenu;
+      $('#back2').onclick = goMenu;
+      $('#back3').onclick = goMenu;
+      $('#back4').onclick = goMenu;
+
+      $('#btnSolicitar').onclick = solicitarMed;
+      $('#btnGuardarDatos').onclick = guardarDatos;
+
+      // Modal de registro
+      $('#btnOpenReg').onclick = openRegModal;
+      $('#regCancel').onclick = closeRegModal;
+      $('#regOk').onclick = doRegister;
+
+      // Modal de Changelog
+      const openChangelog = () => { $('#changelogModal').classList.remove('hidden'); };
+      const closeChangelog = () => { $('#changelogModal').classList.add('hidden'); };
+      $('#versionBtn').onclick = openChangelog;
+      const buildEl = $('#build');
+      if (buildEl) buildEl.onclick = openChangelog;
+      $('#changelogCloseBtn').onclick = closeChangelog;
+      $('#changelogOk').onclick = closeChangelog;
+
+      // Normalización on-blur
+      ['r_apellido', 'r_nombre', 'r_domicilio', 'r_localidad'].forEach(id => {
+        const el = $('#' + id); if (el) el.addEventListener('blur', () => el.value = toUC(el.value));
+      });
+
+      ['d_tel', 'd_dom'].forEach(id => {
+        const el = $('#' + id);
+        if (el) el.addEventListener('input', validateDatosForm);
+      });
+
+
+      // autocompletar DNI si quedó guardado
+      const lastDni = localStorage.getItem('dni');
+      if (lastDni) $('#dni').value = lastDni;
+
+      // Config inicial (para mostrar gates en menú si loguea rápido)
+      loadConfig().then(() => { reflectGatesInMenu(); }).catch(() => { });
+    });
+  </script>
+</body>
+
+</html>
