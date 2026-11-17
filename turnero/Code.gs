@@ -628,6 +628,7 @@ function pub_reservar(dateMs, horaText, dni, nombre) {
         const resAppend = appendReserva_(dateMs, _normHoraStr_(horaText), nd, String(nombre || ''));
 
         pub_log('PUB_RESERVAR_OK', { dni: nd, result: 'ok', fechaMs: dateMs, hora: _normHoraStr_(horaText), reasignado: resAppend.reasignado });
+        if (typeof calSync_trasCambioEnSheet_ === 'function') calSync_trasCambioEnSheet_(); // refleja el cambio en Google Calendar (CalendarSync.gs)
         return { ok: true, fechaMs: dateMs, hora: _normHoraStr_(horaText), reasignado: resAppend.reasignado };
     } finally {
         try { lock.releaseLock(); } catch (_) { }
@@ -685,6 +686,7 @@ function pub_cancelar(dni, fechaMs, horaText) {
         }
 
         pub_log('PUB_CANCELAR_OK', { dni: nd, result: 'ok', fechaMs, hora: _normHoraStr_(horaText), accion: resCancel.accion });
+        if (typeof calSync_trasCambioEnSheet_ === 'function') calSync_trasCambioEnSheet_(); // refleja el cambio en Google Calendar (CalendarSync.gs)
         return { ok: true, accion: resCancel.accion };
     } finally {
         try { lock.releaseLock(); } catch (_) { }
